@@ -1,0 +1,7 @@
+ds-test/=lib/forge-std/lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+@bnb-chain/greenfield-contracts-sdk/=lib/greenfield-contracts-sdk/contracts/
+@bnb-chain/greenfield-contracts/=lib/greenfield-contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+openzeppelin-foundry-upgrades=lib/openzeppelin-foundry-upgrades/src/
