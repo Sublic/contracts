@@ -13,3 +13,6 @@
 [submodule "lib/greenfield-contracts"]
 	path = lib/greenfield-contracts
 	url = https://github.com/bnb-chain/greenfield-contracts
+[submodule "lib/Algebra"]
+	path = lib/Algebra
+	url = https://github.com/cryptoalgebra/Algebra
