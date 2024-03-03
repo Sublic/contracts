@@ -52,6 +52,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     AdminParams public params;
     uint256 public claimable;
     mapping(string => bytes32) public mediaIds;
+    mapping(string => address) public mediaTokens;
 
     // ============ initialize ====================
 
@@ -268,7 +269,8 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         uint64 expireHeight,
         uint32 virtualGroupFamilyId,
         bytes calldata bucketSignature,
-        address[] calldata authors
+        address[] calldata authors,
+        address tokenAddress
     ) external payable {
         require(mediaIds[name] == "", "SublicMediaFactory: ERROR_NAME_ALREADY_USED");
         (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
@@ -316,6 +318,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         });
 
         mediaIds[name] = resourceId;
+        mediaTokens[name] = tokenAddress;
 
         emit MediaResourceCreationInitiated(resourceId);
     }

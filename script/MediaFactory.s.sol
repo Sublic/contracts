@@ -56,7 +56,8 @@ contract MediaFactoryScript is Script {
             uint64(vm.envUint("MR_EXPIRE_HEIGHT")),
             uint32(vm.envUint("MR_VIRTUAL_GROUP")),
             vm.envBytes("MR_SIGNATURE"),
-            authors
+            authors,
+            0x0000000000000000000000000000000000000000
         );
 
         vm.stopBroadcast();
