@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Script, console2} from "forge-std/Script.sol";
-import {MediaFactory} from "../src/MediaFactory.sol";
-import {BucketHub} from "@bnb-chain/greenfield-contracts/contracts/middle-layer/resource-mirror/BucketHub.sol";
+import {Script, console2} from 'forge-std/Script.sol';
+import {MediaFactory} from '../src/MediaFactory.sol';
+import {BucketHub} from '@bnb-chain/greenfield-contracts/contracts/middle-layer/resource-mirror/BucketHub.sol';
 
 contract MediaFactoryScript is Script {
     function setUp() public {}
 
     function run() public {
-        address crossChain = vm.envAddress("CROSSCHAIN_ADDRESS");
-        address bucketHub = vm.envAddress("BUCKET_HUB_ADDRESS");
-        address groupHub = vm.envAddress("GROUP_HUB_ADDRESS");
-        address tokenHub = vm.envAddress("TOKEN_HUB_ADDRESS");
+        address crossChain = vm.envAddress('CROSSCHAIN_ADDRESS');
+        address bucketHub = vm.envAddress('BUCKET_HUB_ADDRESS');
+        address groupHub = vm.envAddress('GROUP_HUB_ADDRESS');
+        address tokenHub = vm.envAddress('TOKEN_HUB_ADDRESS');
 
-        address sublicTokenFactory = vm.envAddress("TOKEN_FACTORY_ADDRESS");
+        address sublicTokenFactory = vm.envAddress('TOKEN_FACTORY_ADDRESS');
 
-        uint256 callbackGasLimit = vm.envUint("CALLBACK_GAS_LIMIT");
+        uint256 callbackGasLimit = vm.envUint('CALLBACK_GAS_LIMIT');
 
-        address spAddress = vm.envAddress("SP_OPERATOR_ADDRESS");
+        address spAddress = vm.envAddress('SP_OPERATOR_ADDRESS');
         vm.startBroadcast();
         MediaFactory factory = new MediaFactory();
 
@@ -45,7 +45,7 @@ contract MediaFactoryScript is Script {
     }
 
     function createMR() public {
-        address factoryAddress = vm.envAddress("FACTORY_ADDRESS");
+        address factoryAddress = vm.envAddress('FACTORY_ADDRESS');
 
         MediaFactory factory = MediaFactory(payable(factoryAddress));
 
@@ -55,12 +55,12 @@ contract MediaFactoryScript is Script {
         vm.startBroadcast();
 
         factory.createMediaResource{value: 0.08 ether}(
-            vm.envString("MR_NAME"),
-            uint64(vm.envUint("MR_EXPIRE_HEIGHT")),
-            uint32(vm.envUint("MR_VIRTUAL_GROUP")),
-            vm.envBytes("MR_SIGNATURE"),
+            vm.envString('MR_NAME'),
+            uint64(vm.envUint('MR_EXPIRE_HEIGHT')),
+            uint32(vm.envUint('MR_VIRTUAL_GROUP')),
+            vm.envBytes('MR_SIGNATURE'),
             authors,
-            vm.envString("MR_SYMBOL")
+            vm.envString('MR_SYMBOL')
         );
 
         vm.stopBroadcast();

@@ -8,8 +8,9 @@ import {ITokenHub} from '@bnb-chain/greenfield-contracts/contracts/interface/ITo
 import {ICrossChain} from '@bnb-chain/greenfield-contracts/contracts/interface/ICrossChain.sol';
 
 import {ISublicTokenFactory} from './interfaces/ISublicTokenFactory.sol';
+import {ISublicMediaGroupManager} from './interfaces/ISublicMediaGroupManager.sol';
 
-contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
+contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp, ISublicMediaGroupManager {
     // ============ DATA TYPES ====================
 
     struct MediaElementResourceSet {
@@ -57,7 +58,6 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     uint256 public claimable;
     mapping(string => bytes32) public mediaIds;
     mapping(string => address) public mediaTokens;
-    mapping(address => bytes32) public plugins;
 
     // ============ initialize ====================
 
@@ -114,8 +114,8 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         _;
     }
 
-    modifier onlyPlugin() {
-        require(plugins[_msgSender()] != '');
+    modifier onlySwapper() {
+        require(_msgSender() == params.sublicTokenFactory);
         _;
     }
 
@@ -295,8 +295,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
 
     // ============ PUBLIC METHODS ===============
 
-    function addToGroup(address user) external onlyPlugin {
-        bytes32 mediaId = plugins[_msgSender()];
+    function addToGroup(address user, bytes32 mediaId) external onlySwapper {
         MediaElementResourceSet storage media = resources[mediaId];
 
         (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
@@ -342,10 +341,11 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         );
         MediaFactory(this).initAuthorsGroupResource{value: params.authorsValueAmount}(_msgSender(), name, resourceId);
 
-        (address tokenAddress, address plugin) = ISublicTokenFactory(params.sublicTokenFactory)
+        address tokenAddress = ISublicTokenFactory(params.sublicTokenFactory)
             .createSubscriptionToken(
                 string.concat(name, '-subscription-token'), 
-                string.concat('SBLC-', tokenSymbol)
+                string.concat('SBLC-', tokenSymbol),
+                resourceId
             );
 
         resources[resourceId] = MediaElementResourceSet({
@@ -366,7 +366,6 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
 
         mediaIds[name] = resourceId;
         mediaTokens[name] = tokenAddress;
-        plugins[plugin] = resourceId;
 
         emit MediaResourceCreationInitiated(resourceId);
     }
