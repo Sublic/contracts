@@ -344,8 +344,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp, ISublicMediaGr
         address tokenAddress = ISublicTokenFactory(params.sublicTokenFactory)
             .createSubscriptionToken(
                 string.concat(name, '-subscription-token'), 
-                string.concat('SBLC-', tokenSymbol),
-                resourceId
+                string.concat('SBLC-', tokenSymbol)
             );
 
         resources[resourceId] = MediaElementResourceSet({
@@ -368,6 +367,11 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp, ISublicMediaGr
         mediaTokens[name] = tokenAddress;
 
         emit MediaResourceCreationInitiated(resourceId);
+    }
+
+    function getSubscriptionToken(bytes32 mediaId) external view returns(address) {
+        MediaElementResourceSet storage media = resources[mediaId];
+        return media.token;
     }
 
     receive() external payable {
