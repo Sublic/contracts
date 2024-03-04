@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {BucketApp} from "@bnb-chain/greenfield-contracts-sdk/BucketApp.sol";
-import {GroupApp} from "@bnb-chain/greenfield-contracts-sdk/GroupApp.sol";
-import {ITokenHub} from "@bnb-chain/greenfield-contracts/contracts/interface/ITokenHub.sol";
-import {ICrossChain} from "@bnb-chain/greenfield-contracts/contracts/interface/ICrossChain.sol";
+import {OwnableUpgradeable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import {BucketApp} from '@bnb-chain/greenfield-contracts-sdk/BucketApp.sol';
+import {GroupApp} from '@bnb-chain/greenfield-contracts-sdk/GroupApp.sol';
+import {ITokenHub} from '@bnb-chain/greenfield-contracts/contracts/interface/ITokenHub.sol';
+import {ICrossChain} from '@bnb-chain/greenfield-contracts/contracts/interface/ICrossChain.sol';
 
-import {ISublicTokenFactory} from "./interfaces/ISublicTokenFactory.sol";
+import {ISublicTokenFactory} from './interfaces/ISublicTokenFactory.sol';
 
 contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     // ============ DATA TYPES ====================
@@ -57,6 +57,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     uint256 public claimable;
     mapping(string => bytes32) public mediaIds;
     mapping(string => address) public mediaTokens;
+    mapping(address => bytes32) public plugins;
 
     // ============ initialize ====================
 
@@ -80,10 +81,10 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     }
 
     function claimCollectedFee(address recepient, uint256 amount) external onlyOwner {
-        require(amount >= claimable, "SublicMediaFactory: ERROR_INNSUFFICIENT_CLAIM_AMOUNT");
-        (bool success,) = payable(recepient).call{value: amount}("");
+        require(amount >= claimable, 'SublicMediaFactory: ERROR_INNSUFFICIENT_CLAIM_AMOUNT');
+        (bool success,) = payable(recepient).call{value: amount}('');
 
-        require(success, "SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL");
+        require(success, 'SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL');
     }
 
     // ============ OVERRIDES ====================
@@ -95,14 +96,14 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         uint256 resourceId,
         bytes calldata callbackData
     ) external override(BucketApp, GroupApp) {
-        require(msg.sender == bucketHub || msg.sender == groupHub, "SublicMediaFactory: ERROR_INVALID_RELAY_CALLER");
+        require(msg.sender == bucketHub || msg.sender == groupHub, 'SublicMediaFactory: ERROR_INVALID_RELAY_CALLER');
 
         if (resourceType == RESOURCE_BUCKET) {
             _bucketGreenfieldCall(status, operationType, resourceId, callbackData);
         } else if (resourceType == RESOURCE_GROUP) {
             _groupGreenfieldCall(status, operationType, resourceId, callbackData);
         } else {
-            revert("SublicMediaFactory: ERROR_INVALID_RESOURCE");
+            revert('SublicMediaFactory: ERROR_INVALID_RESOURCE');
         }
     }
 
@@ -110,6 +111,11 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
 
     modifier onlySelfCall() {
         require(_msgSender() == address(this));
+        _;
+    }
+
+    modifier onlyPlugin() {
+        require(plugins[_msgSender()] != '');
         _;
     }
 
@@ -126,7 +132,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
                 bool success = ITokenHub(params.tokenHub).transferOut{value: resource.unspentEth}(
                     resource.owner, resource.unspentEth - relayFee - minAckRelayFee
                 );
-                require(success, "SublicMediaFactory: ERROR_UNSPENT_ETH_TRANSFER_FAIL");
+                require(success, 'SublicMediaFactory: ERROR_UNSPENT_ETH_TRANSFER_FAIL');
             } else {
                 claimable += resource.unspentEth;
             }
@@ -153,7 +159,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         override(GroupApp)
     {
         (bytes32 resourceId, GroupCreatedType groupType) = abi.decode(_callbackData, (bytes32, GroupCreatedType));
-        require(groupType != GroupCreatedType.Unspecified, "SublicMediaFactory: ERROR_INVALID_GROUP_TYPE_CREATED");
+        require(groupType != GroupCreatedType.Unspecified, 'SublicMediaFactory: ERROR_INVALID_GROUP_TYPE_CREATED');
 
         if (_status == STATUS_SUCCESS) {
             if (groupType == GroupCreatedType.Subscribers) {
@@ -197,7 +203,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     ) public payable onlySelfCall {
         _createBucket(
             sender,
-            string.concat("sublic-", name),
+            string.concat('sublic-', name),
             BucketVisibilityType.Private,
             sender,
             params.spAddress,
@@ -222,7 +228,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
             FailureHandleStrategy.BlockOnFail,
             abi.encode(resourceId, GroupCreatedType.Subscribers),
             address(this),
-            string.concat("sublic-", name, "-subscribers"),
+            string.concat('sublic-', name, '-subscribers'),
             callbackGasLimit
         );
     }
@@ -237,7 +243,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
             FailureHandleStrategy.BlockOnFail,
             abi.encode(resourceId, GroupCreatedType.Authors),
             address(this),
-            string.concat("sublic-", name, "-authors"),
+            string.concat('sublic-', name, '-authors'),
             callbackGasLimit
         );
     }
@@ -266,7 +272,37 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         );
     }
 
+    function addSubscriberToGroup(uint256 groupId, address user)
+        public
+        payable
+        onlySelfCall
+    {
+        
+        address[] memory members = new address[](1);
+        members[0] = user;
+
+        uint64[] memory expirations = new uint64[](1);
+        expirations[0] = 0;
+
+        _updateGroup(
+            address(this),
+            groupId,
+            UpdateGroupOpType.AddMembers,
+            members,
+            expirations
+        );
+    }
+
     // ============ PUBLIC METHODS ===============
+
+    function addToGroup(address user) external onlyPlugin {
+        bytes32 mediaId = plugins[_msgSender()];
+        MediaElementResourceSet storage media = resources[mediaId];
+
+        (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
+
+        MediaFactory(this).addSubscriberToGroup{value: relayFee + minAckRelayFee}(media.subcribersGroupId, user);
+    }
 
     function createMediaResource(
         string calldata name,
@@ -276,13 +312,13 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         address[] calldata authors,
         string calldata tokenSymbol
     ) external payable {
-        require(mediaIds[name] == "", "SublicMediaFactory: ERROR_NAME_ALREADY_USED");
+        require(mediaIds[name] == '', 'SublicMediaFactory: ERROR_NAME_ALREADY_USED');
         (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
         require(
             msg.value
                 >= params.bucketValueAmount + params.authorsValueAmount + params.subscribersValueAmount
                     + params.authorsAddValueAmount + params.protocolFee + 2 * relayFee + 2 * minAckRelayFee,
-            "SublicMediaFactory: ERROR_INSUFFICIENT_PAYMENT_AMOUNT"
+            'SublicMediaFactory: ERROR_INSUFFICIENT_PAYMENT_AMOUNT'
         );
         bytes32 resourceId = keccak256(abi.encodePacked(name, authors, _msgSender()));
 
@@ -291,12 +327,12 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         bool success = tokens.transferOut{value: (params.protocolFee / 2) + relayFee + minAckRelayFee}(
             address(this), params.protocolFee / 2
         );
-        require(success, "SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL");
+        require(success, 'SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL');
 
         success = tokens.transferOut{value: (params.protocolFee / 2) + relayFee + minAckRelayFee}(
             _msgSender(), params.protocolFee / 2
         );
-        require(success, "SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL");
+        require(success, 'SublicMediaFactory: ERROR_FEE_ETH_TRANSFER_FAIL');
 
         MediaFactory(this).initBucketResource{value: params.bucketValueAmount}(
             _msgSender(), expireHeight, virtualGroupFamilyId, name, bucketSignature, resourceId
@@ -306,10 +342,10 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         );
         MediaFactory(this).initAuthorsGroupResource{value: params.authorsValueAmount}(_msgSender(), name, resourceId);
 
-        address tokenAddress = ISublicTokenFactory(params.sublicTokenFactory)
+        (address tokenAddress, address plugin) = ISublicTokenFactory(params.sublicTokenFactory)
             .createSubscriptionToken(
                 string.concat(name, '-subscription-token'), 
-                string.concat("SBLC-", tokenSymbol)
+                string.concat('SBLC-', tokenSymbol)
             );
 
         resources[resourceId] = MediaElementResourceSet({
@@ -330,6 +366,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
 
         mediaIds[name] = resourceId;
         mediaTokens[name] = tokenAddress;
+        plugins[plugin] = resourceId;
 
         emit MediaResourceCreationInitiated(resourceId);
     }

@@ -5,5 +5,5 @@ interface ISublicTokenFactory {
     function createSubscriptionToken(
         string memory _name,
         string memory _symbol
-    ) external returns (address newToken);
+    ) external returns (address newToken, address plugin);
 }
