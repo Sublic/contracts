@@ -14,6 +14,8 @@ contract MediaFactoryScript is Script {
         address groupHub = vm.envAddress("GROUP_HUB_ADDRESS");
         address tokenHub = vm.envAddress("TOKEN_HUB_ADDRESS");
 
+        address sublicTokenFactory = vm.envAddress("TOKEN_FACTORY_ADDRESS");
+
         uint256 callbackGasLimit = vm.envUint("CALLBACK_GAS_LIMIT");
 
         address spAddress = vm.envAddress("SP_OPERATOR_ADDRESS");
@@ -26,6 +28,7 @@ contract MediaFactoryScript is Script {
             MediaFactory.AdminParams({
                 tokenHub: tokenHub,
                 spAddress: spAddress,
+                sublicTokenFactory: sublicTokenFactory,
                 readQuotaToCharge: 0,
                 bucketValueAmount: 0.01 ether,
                 subscribersValueAmount: 0.01 ether,
@@ -57,7 +60,7 @@ contract MediaFactoryScript is Script {
             uint32(vm.envUint("MR_VIRTUAL_GROUP")),
             vm.envBytes("MR_SIGNATURE"),
             authors,
-            0x0000000000000000000000000000000000000000
+            vm.envString("MR_SYMBOL")
         );
 
         vm.stopBroadcast();

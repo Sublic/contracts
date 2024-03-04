@@ -5,7 +5,9 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {BucketApp} from "@bnb-chain/greenfield-contracts-sdk/BucketApp.sol";
 import {GroupApp} from "@bnb-chain/greenfield-contracts-sdk/GroupApp.sol";
 import {ITokenHub} from "@bnb-chain/greenfield-contracts/contracts/interface/ITokenHub.sol";
-import {ICrossChain} from "@bnb-chain/greenfield-contracts/contracts//interface/ICrossChain.sol";
+import {ICrossChain} from "@bnb-chain/greenfield-contracts/contracts/interface/ICrossChain.sol";
+
+import {ISublicTokenFactory} from "./interfaces/ISublicTokenFactory.sol";
 
 contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     // ============ DATA TYPES ====================
@@ -14,6 +16,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         bytes32 id;
         address owner;
         address[] initialAuthors;
+        address token;
         uint256 bucketId;
         uint256 subcribersGroupId;
         uint256 authorsGroupId;
@@ -27,6 +30,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
     struct AdminParams {
         address tokenHub;
         address spAddress;
+        address sublicTokenFactory;
         uint64 readQuotaToCharge;
         uint256 bucketValueAmount;
         uint256 subscribersValueAmount;
@@ -270,7 +274,7 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         uint32 virtualGroupFamilyId,
         bytes calldata bucketSignature,
         address[] calldata authors,
-        address tokenAddress
+        string calldata tokenSymbol
     ) external payable {
         require(mediaIds[name] == "", "SublicMediaFactory: ERROR_NAME_ALREADY_USED");
         (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
@@ -302,9 +306,16 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp {
         );
         MediaFactory(this).initAuthorsGroupResource{value: params.authorsValueAmount}(_msgSender(), name, resourceId);
 
+        address tokenAddress = ISublicTokenFactory(params.sublicTokenFactory)
+            .createSubscriptionToken(
+                string.concat(name, '-subscription-token'), 
+                string.concat("SBLC-", tokenSymbol)
+            );
+
         resources[resourceId] = MediaElementResourceSet({
             id: resourceId,
             owner: _msgSender(),
+            token: tokenAddress,
             unspentEth: msg.value - params.bucketValueAmount - params.authorsValueAmount - params.subscribersValueAmount
                 - params.protocolFee - 2 * relayFee - 2 * minAckRelayFee,
             initialAuthors: authors,
