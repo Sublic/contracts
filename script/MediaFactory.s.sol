@@ -12,18 +12,33 @@ contract MediaFactoryScript is Script {
         address crossChain = vm.envAddress('CROSSCHAIN_ADDRESS');
         address bucketHub = vm.envAddress('BUCKET_HUB_ADDRESS');
         address groupHub = vm.envAddress('GROUP_HUB_ADDRESS');
-        address tokenHub = vm.envAddress('TOKEN_HUB_ADDRESS');
-
-        address sublicTokenFactory = vm.envAddress('TOKEN_FACTORY_ADDRESS');
 
         uint256 callbackGasLimit = vm.envUint('CALLBACK_GAS_LIMIT');
 
-        address spAddress = vm.envAddress('SP_OPERATOR_ADDRESS');
         vm.startBroadcast();
         MediaFactory factory = new MediaFactory();
 
         factory.initialize(crossChain, bucketHub, groupHub, callbackGasLimit, 0);
 
+        BucketHub buckets = BucketHub(bucketHub);
+        buckets.grantRole(buckets.ROLE_CREATE(), address(factory), 2007186241);
+
+        vm.stopBroadcast();
+    }
+
+    function updateAdminParams() public {
+        address tokenHub = vm.envAddress('TOKEN_HUB_ADDRESS');
+
+        address sublicTokenFactory = vm.envAddress('TOKEN_FACTORY_ADDRESS');
+
+        address spAddress = vm.envAddress('SP_OPERATOR_ADDRESS');
+        
+        address mediaFactoryAddress = vm.envAddress('MEDIA_FACTORY_ADDRESS');
+
+        MediaFactory factory = MediaFactory(payable(mediaFactoryAddress));
+        vm.startBroadcast();
+
+        
         factory.updateAdminParams(
             MediaFactory.AdminParams({
                 tokenHub: tokenHub,
@@ -37,9 +52,6 @@ contract MediaFactoryScript is Script {
                 protocolFee: 0.01 ether
             })
         );
-
-        BucketHub buckets = BucketHub(bucketHub);
-        buckets.grantRole(buckets.ROLE_CREATE(), address(factory), 2007186241);
 
         vm.stopBroadcast();
     }
