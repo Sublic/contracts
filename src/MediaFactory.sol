@@ -299,8 +299,9 @@ contract MediaFactory is OwnableUpgradeable, BucketApp, GroupApp, ISublicMediaGr
         MediaElementResourceSet storage media = resources[mediaId];
 
         (uint256 relayFee, uint256 minAckRelayFee) = ICrossChain(crossChain).getRelayFees();
+        uint256 gasPrice = ICrossChain(crossChain).callbackGasPrice();
 
-        MediaFactory(this).addSubscriberToGroup{value: relayFee + minAckRelayFee}(media.subcribersGroupId, user);
+        MediaFactory(this).addSubscriberToGroup{value: relayFee + minAckRelayFee + callbackGasLimit * gasPrice}(media.subcribersGroupId, user);
     }
 
     function createMediaResource(
